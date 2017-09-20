@@ -5,3 +5,7 @@
 # Directory
 classifier
 env
+csv
+
+# Databases
+*.sqlite3
