@@ -15,5 +15,6 @@ def get_sentiment(request):
     """
     if request.method == 'POST':
         text = request.data['text']
-        result = SentalyticsClassifier().classify_svm(text)
-        return Response(result, status=status.HTTP_201_CREATED)
+        result = SentalyticsClassifier().classify_text(text)
+        classes = ['negative', 'positive', 'neutral']
+        return Response(classes[int(result)], status=status.HTTP_201_CREATED)
