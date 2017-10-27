@@ -1,10 +1,13 @@
+from django.db.models.functions import ExtractMonth, ExtractYear
 from django.shortcuts import render
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from sentalytics.senti_model.sentalytics import SentalyticsClassifier
-from sentalytics.models import Tweet
-from sentalytics.serializers import TweetSerializer
+from sentalytics.models import Tweet, Polarity
+from sentalytics.serializers import TweetSerializer, PolaritySerializer, MySerializer
+from django.db.models import Count, Sum
+import json
 
 
 # Create your views here.
@@ -30,8 +33,23 @@ def get_batch_sentiments(request):
     pass
 
 
-def time_lines():
-    pass
+@api_view(['GET'])
+def filter_tweets(request):
+    if request.method == 'GET':
+        year = request.query_params.get('year', None)
+        month = request.query_params.get('month', None)
+
+        if month is not None:
+            query_set = Tweet.objects.filter(created_date__month=month)
+        elif year is not None:
+            query_set = Tweet.objects.filter(created_date__year=year)
+        elif month and year is not None:
+            query_set = Tweet.objects.filter(created_date__year=year, created_date__month=month)
+        else:
+            query_set = Tweet.objects.all()
+
+        response = TweetSerializer(query_set, many=True)
+        return Response(response.data, status=status.HTTP_200_OK)
 
 
 @api_view(['GET'])
@@ -45,6 +63,17 @@ def get_tweets(request):
         return Response(status=status.HTTP_404_NOT_FOUND)
     if request.method == 'GET':
         serializer = TweetSerializer(tweet, many=True)
+        # print('I am executing AA')
         return Response(serializer.data, status=status.HTTP_200_OK)
-        # tweets = Tweet.objects.all()
-        # return Response(tweets, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def get_polarity_tweets(request):
+    try:
+        polarity = Polarity.objects.all()
+    except Tweet.DoesNotExist:
+        return Response(status=status.HTTP_404_NOT_FOUND)
+    if request.method == 'GET':
+        serializer = PolaritySerializer(polarity, many=True)
+        # print('I am executing BB')
+        return Response(serializer.data, status=status.HTTP_200_OK)

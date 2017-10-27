@@ -11,9 +11,9 @@ class Tweet(models.Model):
     username = models.TextField(null=True)
     text = models.TextField()
     location = models.TextField(null=True)
-    polarity = models.ForeignKey(Polarity, null=True)
-    date = models.DateTimeField()
+    polarity = models.ForeignKey(Polarity, null=True, related_name='tweets')
+    created_date = models.DateField()
 
     class Meta:
-        ordering = ('date',)
+        ordering = ('created_date',)
 

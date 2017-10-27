@@ -1,0 +1,12 @@
+- model: sentalytics.polarity
+  pk: 0
+  fields:
+    name: negative
+- model: sentalytics.polarity
+  pk: 1
+  fields:
+    name: positive
+- model: sentalytics.polarity
+  pk: 2
+  fields:
+    name: neutral

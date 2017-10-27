@@ -4,6 +4,7 @@ from sentalytics.models import Polarity, Tweet
 
 
 class PolaritySerializer(serializers.Serializer):
+    name = serializers.CharField()
     tweets = serializers.StringRelatedField(many=True)
 
     class Meta:
@@ -17,8 +18,16 @@ class TweetSerializer(serializers.Serializer):
     text = serializers.CharField()
     location = serializers.CharField()
     polarity = serializers.CharField()
-    date = serializers.DateTimeField()
+    created_date = serializers.DateField()
 
     class Meta:
         model = Tweet
         fields = ('tweet_id', 'text', 'location')
+
+
+class MySerializer(serializers.Serializer):
+    created_date = serializers.DateField()
+
+    class Meta:
+        model = Tweet
+        fields = 'created_date'

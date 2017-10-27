@@ -1,5 +1,6 @@
 import tweepy
 import sqlite3
+import datetime
 
 consumer_key = "fYYnaChhE37qSU6kny4rlDI12"
 consumer_secret = "QNhX6NkQRIUuTmLFFwZNodTkGpLuST44fv8pEFUgxdZBWtv7vw"
@@ -13,11 +14,15 @@ api = tweepy.API(auth)
 
 # public_tweets = api.home_timeline()
 # for tweet in public_tweets:
-#     print(tweet.text)
-
-jumia_tweets = api.search("q=to:@JumiaKenya")
-for tweet in jumia_tweets:
-    print(tweet.user.location)
+#     print(tweet)
+#
+# for tweet in tweepy.Cursor(api.search,
+#                            q="to:@JumiaKenya",
+#                            rpp=100,
+#                            result_type="recent",
+#                            include_entities=True,
+#                            lang="en").items():
+#     print(tweet.id, tweet.created_at, tweet.text, tweet.user.location)
 
 
 def save_to_db():
@@ -34,9 +39,10 @@ def save_to_db():
                                    lang="en").items():
             # print(tweet.id, tweet.created_at, tweet.text, tweet.user.location)
             # Insert a row of data
-            c.execute("INSERT INTO sentalytics_tweet (tweet_id,username,text,location,date) VALUES (?,?,?,?,?)",
+            # Convert the datetime into date
+            c.execute("INSERT INTO sentalytics_tweet (tweet_id,username,text,location,created_date) VALUES (?,?,?,?,?)",
                       (tweet.id, tweet.user.name, tweet.text, tweet.user.location,
-                       tweet.created_at))
+                       tweet.created_at.date()))
 
         # Save (commit) the changes
         conn.commit()
