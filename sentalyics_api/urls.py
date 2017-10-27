@@ -20,4 +20,5 @@ from sentalytics import views
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^classify/$', views.get_sentiment),
+    url(r'tweets/', views.get_tweets),
 ]
