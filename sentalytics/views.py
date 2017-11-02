@@ -99,7 +99,7 @@ def get_topic(request):
         tweet_text = []
         for tweet in classified_tweets:
             tweet_text.append(tweet['text'])
-    topics_nfm = ExtractTopic().nmf_extract(tweet_text)
+    topics_nmf = ExtractTopic().nmf_extract(tweet_text)
     topics_lda = ExtractTopic().lda_extract(tweet_text)
-    bi_algo = topics_lda, topics_nfm
-    return Response(bi_algo, status=status.HTTP_201_CREATED)
+    nfm_lda = {"nmf": topics_nmf, "lda": topics_lda}  # combined algorithms
+    return Response(nfm_lda, status=status.HTTP_201_CREATED)

@@ -26,7 +26,7 @@ class ExtractTopic:
             prevalent_topics.append(topics)
         return prevalent_topics
 
-    no_topics = 2
+    no_topics = 3
     no_top_words = 4
     no_top_documents = 4
 
