@@ -5,9 +5,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from sentalytics.senti_model.sentalytics import SentalyticsClassifier
 from sentalytics.models import Tweet, Polarity
-from sentalytics.serializers import TweetSerializer, PolaritySerializer, MySerializer
-from django.db.models import Count, Sum
-import json
+from sentalytics.serializers import TweetSerializer, PolaritySerializer
+from sentalytics.senti_model.extract_topic import ExtractTopic
 
 
 # Create your views here.
@@ -24,13 +23,24 @@ def get_sentiment(request):
         return Response(result, status=status.HTTP_201_CREATED)
 
 
+@api_view(['GET', 'POST'])
 def get_batch_sentiments(request):
     """
     Classifies a range of tweets based on the date a user selects
     :param request:
     :return:
     """
-    pass
+    if request.method == 'POST':
+        tweets = request.data
+        # Get the sentiment for each tweet
+        classified = []
+        for tweet in tweets:
+            print(tweet)
+            result = int(SentalyticsClassifier().classify_text(tweet['text']))
+            Tweet.objects.filter(tweet_id=tweet['tweet_id']).update(polarity=result)
+        # Query for the classified tweets
+        classified_tweets = Tweet.objects.select_related('polarity').all()
+        return Response(TweetSerializer(classified_tweets, many=True).data, status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET'])
@@ -58,7 +68,9 @@ def get_tweets(request):
        Retrieve, update or delete a code snippet.
        """
     try:
-        tweet = Tweet.objects.all()
+        # Return values where the polarity is null
+        tweet = Tweet.objects.exclude(polarity__isnull=False)
+        # tweet = Tweet.objects.all()
     except Tweet.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
     if request.method == 'GET':
@@ -77,3 +89,17 @@ def get_polarity_tweets(request):
         serializer = PolaritySerializer(polarity, many=True)
         # print('I am executing BB')
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET', 'POST'])
+def get_topic(request):
+    global tweet_text
+    if request.method == 'POST':
+        classified_tweets = request.data
+        tweet_text = []
+        for tweet in classified_tweets:
+            tweet_text.append(tweet['text'])
+    topics_nfm = ExtractTopic().nmf_extract(tweet_text)
+    topics_lda = ExtractTopic().lda_extract(tweet_text)
+    bi_algo = topics_lda, topics_nfm
+    return Response(bi_algo, status=status.HTTP_201_CREATED)

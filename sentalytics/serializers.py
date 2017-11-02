@@ -3,15 +3,6 @@ from rest_framework import serializers
 from sentalytics.models import Polarity, Tweet
 
 
-class PolaritySerializer(serializers.Serializer):
-    name = serializers.CharField()
-    tweets = serializers.StringRelatedField(many=True)
-
-    class Meta:
-        model = Polarity
-        fields = ('name', 'tweets')
-
-
 class TweetSerializer(serializers.Serializer):
     tweet_id = serializers.CharField()
     username = serializers.CharField()
@@ -25,9 +16,10 @@ class TweetSerializer(serializers.Serializer):
         fields = ('tweet_id', 'text', 'location')
 
 
-class MySerializer(serializers.Serializer):
-    created_date = serializers.DateField()
+class PolaritySerializer(serializers.Serializer):
+    name = serializers.CharField()
+    tweets = TweetSerializer(many=True, read_only=True)
 
     class Meta:
-        model = Tweet
-        fields = 'created_date'
+        model = Polarity
+        fields = ('name', 'tweets')
