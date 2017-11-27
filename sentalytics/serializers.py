@@ -19,7 +19,8 @@ class TweetSerializer(serializers.Serializer):
 class PolaritySerializer(serializers.Serializer):
     name = serializers.CharField()
     tweets = TweetSerializer(many=True, read_only=True)
+    total_tweets = serializers.IntegerField()
 
     class Meta:
         model = Polarity
-        fields = ('name', 'tweets')
+        fields = ('name', 'tweets', 'total_tweets')

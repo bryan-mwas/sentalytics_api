@@ -8,13 +8,11 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.pipeline import Pipeline
 from sklearn.feature_extraction.text import TfidfTransformer
-from sklearn.naive_bayes import MultinomialNB
-from sklearn.linear_model import LogisticRegression
 from sklearn.linear_model import SGDClassifier
-from sklearn.model_selection import GridSearchCV
 from sklearn.metrics import classification_report
 from sklearn.externals import joblib
 from sklearn import metrics
+from sklearn.linear_model import LogisticRegression
 
 
 class SentalyticsClassifier:
@@ -23,18 +21,31 @@ class SentalyticsClassifier:
     Using the "sentalytics/senti_model" prefix due to namespace issues
     """
     path = os.path.abspath("sentalytics/senti_model/dataset/labelled_tweets.csv")
+    amazon_positive_path = os.path.abspath("sentalytics/senti_model/dataset/amazon_positive.csv")
+    svm_pickle_path = os.path.abspath("sentalytics/senti_model/pickle/clf_svm.pkl")
+    log_reg_pickle = os.path.abspath("sentalytics/senti_model/pickle/clf_log_reg.pkl")
 
     tweet = pd.read_csv(path, usecols=['text', 'polarity'])
+    # https://archive.ics.uci.edu/ml/datasets/Sentiment+Labelled+Sentences
+    positive_amazon = pd.read_csv(amazon_positive_path, usecols=['text', 'polarity'])
+    positive_amazon = positive_amazon.dropna(axis=1, how="any")
 
     # Remove rows will nan values
     tweet = tweet.dropna()
-    tweet = tweet.reindex(np.random.permutation(tweet.index))
 
     """
     preprocessing (replace user handles (@Jumia) to be empty)
     """
     pattern = "(@[A-Za-z0-9]+)|(http|https|ftp)://[a-zA-Z0-9./]+|#(\w+)"
     tweet['text'] = tweet.text.str.replace(pattern, '')
+
+    # Due to the limited number of positive tweets,
+    # I appended some positive tweets from Amazon Dataset
+    # Without duplicated index
+    tweet = tweet.append(positive_amazon).drop_duplicates().reset_index(drop=True)
+
+    # Random shuffling
+    tweet = tweet.reindex(np.random.permutation(tweet.index))
 
     # convert label to a numerical count by creating a new column
     tweet['polarity_num'] = tweet.polarity.map({'negative': 0, 'positive': 1, 'neutral': 2})
@@ -43,8 +54,8 @@ class SentalyticsClassifier:
     X = tweet.text
     y = tweet.polarity_num
 
-    # splitting into train test sets
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
+    # splitting into train test sets in same format
+    X_train, X_test, y_train, y_test = train_test_split(X, y, random_state=4)
 
     def __init__(self):
         print("Initializing")
@@ -56,38 +67,20 @@ class SentalyticsClassifier:
         score = metrics.accuracy_score(self.y_test, predicted)
         print("Accuracy:   %0.3f" % score)
 
-    def nb_classifier(self):
-        clf_nb = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), ('clf', MultinomialNB())])
-        t0 = time.time()
-        pickle = os.path.exists('pickle/clf_nb.pkl')
-        if pickle:
-            print("Pickle file exists. Loading pickle ... \n")
-            clf_nb = joblib.load('pickle/clf_nb.pkl')
-        else:
-            clf_nb = clf_nb.fit(self.X_train, self.y_train)
-            # Create a pickle
-            joblib.dump(clf_nb, 'pickle/clf_nb.pkl')
-        t1 = time.time()
-        prediction_nb = clf_nb.predict(self.X_test)
-        t2 = time.time()
-        time_nb_train = t1 - t0
-        time_nb_predict = t2 - t1
-        self.classifier_report("MultinomialNB", time_nb_train, time_nb_predict, prediction_nb)
-        return clf_nb, prediction_nb
-
     def svm_classifer(self):
         clf_svm = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()),
                             ('clf', SGDClassifier(loss='hinge', penalty='l2', alpha=1e-3, n_iter=5, random_state=42))])
         t0 = time.time()
         # Check if a pickled file exists
-        pickle = os.path.exists('pickle/clf_svm.pkl')
+        pickle = os.path.exists(self.svm_pickle_path)
         if pickle:
             print("Pickle file exists. Loading pickle ... \n")
-            clf_svm = joblib.load('pickle/clf_svm.pkl')
+            clf_svm = joblib.load(self.svm_pickle_path)
         else:
             clf_svm = clf_svm.fit(self.X_train, self.y_train)
             # Create a pickle
-            joblib.dump(clf_svm, 'pickle/clf_svm.pkl')
+            print("Creating pickle file ... \n")
+            joblib.dump(clf_svm, self.svm_pickle_path)
         t1 = time.time()
         prediction_svm = clf_svm.predict(self.X_test)
         t2 = time.time()
@@ -96,39 +89,28 @@ class SentalyticsClassifier:
         self.classifier_report("SGDClassifier", time_svm_train, time_svm_predict, prediction_svm)
         return clf_svm, prediction_svm
 
-    def log_reg_classifier(self):
-        clf_reg = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), ('clf', LogisticRegression())])
+    def log_reg_classifer(self):
+        clf_log_reg = Pipeline([('vect', CountVectorizer()), ('tfidf', TfidfTransformer()), ('clf', LogisticRegression())])
         t0 = time.time()
         # Check if a pickled file exists
-        pickle = os.path.exists('pickle/clf_reg.pkl')
+        pickle = os.path.exists(self.log_reg_pickle)
         if pickle:
             print("Pickle file exists. Loading pickle ... \n")
-            clf_reg = joblib.load('pickle/clf_reg.pkl')
+            clf_log_reg = joblib.load(self.log_reg_pickle)
         else:
-            clf_svm = clf_reg.fit(self.X_train, self.y_train)
+            clf_log_reg = clf_log_reg.fit(self.X_train, self.y_train)
             # Create a pickle
-            joblib.dump(clf_svm, 'pickle/clf_reg.pkl')
+            print("Creating pickle file ... \n")
+            joblib.dump(clf_log_reg, self.log_reg_pickle)
         t1 = time.time()
-        prediction_reg = clf_reg.predict(self.X_test)
+        prediction_log_reg = clf_log_reg.predict(self.X_test)
         t2 = time.time()
-        time_reg_train = t1 - t0
-        time_reg_predict = t2 - t1
-        self.classifier_report("LogisticRegression", time_reg_train, time_reg_predict, prediction_reg)
-        return clf_reg, prediction_reg
+        time_log_reg_train = t1 - t0
+        time_log_reg_predict = t2 - t1
+        self.classifier_report("Logistic Regression:", time_log_reg_train, time_log_reg_predict, prediction_log_reg)
+        return clf_log_reg, prediction_log_reg
 
     def classify_text(self, text):
-        clf = self.svm_classifer()
+        clf = self.log_reg_classifer()
         result = clf[0].predict([text])
         return result
-
-    # def vote_classifier(self):
-    #     clf_svm = self.svm_classifer()
-    #     clf_reg = self.log_reg_classifier()
-    #     clf_nb = self.nb_classifier()
-    #
-    #     # scores
-    #     score_svm = {clf_svm: metrics.accuracy_score(self.y_test, clf_svm[1])}
-    #     score_reg = {clf_reg: metrics.accuracy_score(self.y_test, clf_reg[1])}
-    #     score_nb = {clf_nb: metrics.accuracy_score(self.y_test, clf_nb[1])}
-    #
-    #     return max(score_nb, score_reg, score_svm)

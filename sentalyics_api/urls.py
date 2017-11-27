@@ -23,5 +23,6 @@ urlpatterns = [
     url(r'^tweets/', views.get_tweets),
     url(r'^polarity/', views.get_polarity_tweets),
     url(r'^filter/', views.filter_tweets),
-    url(r'topics/', views.get_topic)
+    url(r'topics/', views.get_topic),
+    url(r'summary/', views.get_summary)
 ]

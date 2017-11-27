@@ -1,3 +1,4 @@
+from django.db.models import Count
 from django.db.models.functions import ExtractMonth, ExtractYear
 from django.shortcuts import render
 from rest_framework import status
@@ -82,7 +83,7 @@ def get_tweets(request):
 @api_view(['GET'])
 def get_polarity_tweets(request):
     try:
-        polarity = Polarity.objects.all()
+        polarity = Polarity.objects.annotate(total_tweets=Count('tweets'),)
     except Tweet.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
     if request.method == 'GET':
@@ -103,3 +104,11 @@ def get_topic(request):
     topics_lda = ExtractTopic().lda_extract(tweet_text)
     nfm_lda = {"nmf": topics_nmf, "lda": topics_lda}  # combined algorithms
     return Response(nfm_lda, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+def get_summary(request):
+    if request.method == 'GET':
+        polarity = Polarity.objects.annotate(total_tweets=Count('tweets'),)
+        serializer = PolaritySerializer(polarity, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)

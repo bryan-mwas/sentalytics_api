@@ -16,13 +16,33 @@ api = tweepy.API(auth)
 # for tweet in public_tweets:
 #     print(tweet)
 #
+for tweet in tweepy.Cursor(api.search,
+                           q="to:@JumiaKenya",
+                           since='2016-11-25',
+                           until='2016-11-27',
+                           # rpp=100,
+                           result_type="recent",
+                           include_entities=True,
+                           lang="en").items():
+    print(tweet.id, tweet.created_at, tweet.text, tweet.user.location)
+
 # for tweet in tweepy.Cursor(api.search,
-#                            q="to:@JumiaKenya",
-#                            rpp=100,
-#                            result_type="recent",
-#                            include_entities=True,
-#                            lang="en").items():
-#     print(tweet.id, tweet.created_at, tweet.text, tweet.user.location)
+#                            q='to:@JumiaKenya',
+#                            since='2016-11-25',
+#                            until='2016-11-27',
+#                            lang='en').items(10):
+#     print('Tweet by: @' + tweet.user.screen_name)
+
+def print_items():
+    for tweet in tweepy.Cursor(api.search,
+                               q="to:@JumiaKenya",
+                               since='2016-11-25',
+                               until='2016-11-27',
+                               # rpp=100,
+                               result_type="recent",
+                               include_entities=True,
+                               lang="en").items():
+        print(tweet.id, tweet.created_at, tweet.text, tweet.user.location)
 
 
 def save_to_db():
