@@ -11,7 +11,7 @@ class Tweet(models.Model):
     username = models.TextField(null=True)
     text = models.TextField()
     location = models.TextField(null=True)
-    polarity = models.ForeignKey(Polarity, null=True, related_name='tweets')
+    polarity = models.ForeignKey(Polarity, null=True, related_name='tweets', on_delete=models.CASCADE,)
     created_date = models.DateField()
 
     class Meta:
